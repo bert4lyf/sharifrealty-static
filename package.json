@@ -6,6 +6,9 @@
     "start": "eleventy --serve",
     "build": "eleventy"
   },
+  "dependencies": {
+    "nodemailer": "^6.9.4"
+  },
   "devDependencies": {
     "@11ty/eleventy": "^1.0.1"
   }

@@ -5,3 +5,29 @@
 [dev]
   command = "npm run start"
   port = 8080
+# Redirect old WordPress AJAX endpoint to our Netlify Function
+[[redirects]]
+  from = "/wp-admin/admin-ajax.php"
+  to = "/.netlify/functions/admin-ajax"
+  status = 200
+  force = true
+
+# Redirect old WordPress JSON API to our function
+[[redirects]]
+  from = "/wp-json/*"
+  to = "/.netlify/functions/admin-ajax?action=:splat"
+  status = 200
+  force = true
+
+# Proxy contact form submissions
+[[redirects]]
+  from = "/contact-form-submit"
+  to = "/.netlify/functions/contact-form"
+  status = 200
+  force = true
+
+# Handle all unmatched routes by serving index.html (for SPA functionality)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
