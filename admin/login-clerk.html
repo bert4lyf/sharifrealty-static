@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sharif Realty - Admin Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .login-container p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+        
+        .clerk-container {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Sharif Realty</h1>
+        <p>Admin Dashboard</p>
+        
+        <div class="error" id="error-message"></div>
+        <div class="loading" id="loading" style="display:none;">Signing in...</div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="login-btn">Sign In</button>
+        </form>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+            <p><strong>Demo Credentials:</strong></p>
+            <p><strong>Admin:</strong><br>
+            📧 sharifrealty19@gmail.com<br>
+            🔑 Bebe&majs@96</p>
+            <p style="margin-top: 10px;"><strong>Super Admin:</strong><br>
+            📧 cardonebert94@gmail.com<br>
+            🔑 11391HdK</p>
+        </div>
+    </div>
+
+    <!-- Clerk SDK - for future production use -->
+    <script 
+        async
+        crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_c3RlYWR5LWplbm5ldC01Ny5jbGVyay5hY2NvdW50cy5kZXYk"
+        src="https://cdn.clerk.com/clerk.js"
+    ></script>
+    
+    <!-- Supabase for authentication -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        console.log('📱 Login page loaded');
+
+        const SUPABASE_URL = 'https://sduhclsehkpssroivzvn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkdWhjbHNlaGtwc3Nyb2l2enZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyODQwNjksImV4cCI6MjA4Njg2MDA2OX0.8009fCh_ydaz02lXK9TaSGgNTEJ4FF3chZg0S8_2Zds';
+        
+        let supabaseClient = null;
+        
+        try {
+            const { createClient } = supabase;
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized for auth');
+        } catch (e) {
+            console.error('❌ Failed to initialize Supabase:', e);
+        }
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🔍 Checking for existing session...');
+            try {
+                const { data } = await supabaseClient.auth.getSession();
+                if (data.session) {
+                    console.log('✅ Session found, redirecting...');
+                    await redirectToDashboard(data.session.user.email);
+                }
+            } catch (e) {
+                console.error('ℹ️ No existing session');
+            }
+        });
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('📝 Login form submitted');
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-message');
+            const loadingDiv = document.getElementById('loading');
+            
+            console.log('📧 Attempting login for:', email);
+            
+            // Reset messages
+            errorMsg.style.display = 'none';
+            errorMsg.textContent = '';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                console.log('🔐 Authenticating with Supabase...');
+                
+                // Authenticate with Supabase
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    console.error('❌ Auth error:', error.message);
+                    throw new Error(error.message);
+                }
+
+                console.log('✅ Authentication successful');
+                await redirectToDashboard(email);
+
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                loadingDiv.style.display = 'none';
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = '❌ ' + error.message;
+            }
+        });
+
+        // Redirect to appropriate dashboard based on role
+        async function redirectToDashboard(email) {
+            try {
+                console.log('🔍 Checking user role in admin_users table...');
+                
+                // Check if user exists in admin_users table
+                const { data: adminUser, error } = await supabaseClient
+                    .from('admin_users')
+                    .select('role, active')
+                    .eq('email', email)
+                    .single();
+
+                if (error || !adminUser) {
+                    console.error('❌ User not found in admin_users table');
+                    // Sign out the user
+                    await supabaseClient.auth.signOut();
+                    throw new Error('User account not found in system. Please contact administrator.');
+                }
+
+                if (!adminUser.active) {
+                    console.warn('⚠️ User account is inactive');
+                    // Sign out inactive user
+                    await supabaseClient.auth.signOut();
+                    throw new Error('Your account has been deactivated. Please contact administrator.');
+                }
+
+                console.log('✅ User verified:', { email, role: adminUser.role });
+                console.log('🔄 Redirecting to dashboard...');
+
+                // Redirect based on role
+                if (adminUser.role === 'super_admin') {
+                    window.location.href = 'super-admin.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('❌ Redirect error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = '❌ ' + error.message;
+            }
+        }
+
+        console.log('✅ Login script ready');
+    </script>
+</body>
+</html>

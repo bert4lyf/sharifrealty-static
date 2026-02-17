@@ -1,0 +1,7 @@
+node_modules/
+_site/
+dist/
+.cache/
+/.netlify
+.DS_Store
+*.log

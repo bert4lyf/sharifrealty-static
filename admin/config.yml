@@ -1,0 +1,45 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "src/media"
+public_folder: "/media"
+
+collections:
+  - name: "posts"
+    label: "Blog Posts"
+    folder: "src/posts"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Featured Image", name: "image", widget: "image", required: false }
+      - { label: "Description", name: "description", widget: "string", required: false }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "pages"
+    label: "Pages"
+    folder: "src/pages"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Featured Image", name: "image", widget: "image", required: false }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "listings"
+    label: "Property Listings"
+    folder: "src/listings"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Price", name: "price", widget: "number" }
+      - { label: "Location", name: "location", widget: "string" }
+      - { label: "Beds", name: "beds", widget: "number", required: false }
+      - { label: "Baths", name: "baths", widget: "number", required: false }
+      - { label: "Square Feet", name: "sqft", widget: "number", required: false }
+      - { label: "Status", name: "status", widget: "select", options: ["For Sale", "For Rent", "Sold"] }
+      - { label: "Featured Image", name: "image", widget: "image", required: false }
+      - { label: "Description", name: "body", widget: "markdown" }

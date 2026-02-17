@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sharif Realty - Admin Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .login-container p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .success {
+            color: #27ae60;
+            background: #d5f4e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Sharif Realty</h1>
+        <p>Admin Dashboard</p>
+        
+        <div class="error" id="error-message"></div>
+        <div class="success" id="success-message"></div>
+        <div class="loading" id="loading">Logging in...</div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="login-btn">Sign In</button>
+        </form>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+            <p><strong>Demo Credentials:</strong></p>
+            <p><strong>Admin:</strong><br>
+            📧 sharifrealty19@gmail.com<br>
+            🔑 Bebe&majs@96</p>
+            <p style="margin-top: 10px;"><strong>Super Admin:</strong><br>
+            📧 cardonebert94@gmail.com<br>
+            🔑 11391HdK</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://sduhclsehkpssroivzvn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkdWhjbHNlaGtwc3Nyb2l2enZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyODQwNjksImV4cCI6MjA4Njg2MDA2OX0.8009fCh_ydaz02lXK9TaSGgNTEJ4FF3chZg0S8_2Zds';
+        
+        console.log('📱 Login page loaded');
+        console.log('Supabase URL:', SUPABASE_URL);
+        
+        let supabaseClient = null;
+        
+        try {
+            const { createClient } = supabase;
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized');
+        } catch (e) {
+            console.error('❌ Failed to initialize Supabase:', e);
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('error-message').textContent = '❌ Error: Supabase library failed to load. Check browser console (F12).';
+        }
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🔍 Checking for existing session...');
+            try {
+                const { data } = await supabaseClient.auth.getSession();
+                if (data.session) {
+                    console.log('✅ Session found, redirecting to dashboard...');
+                    window.location.href = 'index.html';
+                } else {
+                    console.log('ℹ️ No session found, showing login form');
+                }
+            } catch (e) {
+                console.error('❌ Error checking session:', e);
+            }
+        });
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('📝 Login form submitted');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-message');
+            const loadingDiv = document.getElementById('loading');
+            
+            console.log('📧 Email:', email);
+            
+            // Reset messages
+            errorMsg.style.display = 'none';
+            errorMsg.textContent = '';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                console.log('🔐 Attempting Supabase authentication...');
+                
+                // Authenticate with Supabase Auth
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    console.error('❌ Auth error:', error.message);
+                    throw new Error(error.message);
+                }
+
+                console.log('✅ Authentication successful');
+
+                if (data.session) {
+                    console.log('🔍 Verifying user in admin_users table...');
+                    
+                    // Verify user exists in admin_users table
+                    const { data: adminUser, error: adminError } = await supabaseClient
+                        .from('admin_users')
+                        .select('role, active')
+                        .eq('email', email)
+                        .single();
+
+                    if (adminError) {
+                        console.error('❌ Database error:', adminError.message);
+                        throw new Error('User account not found in system. Please contact administrator.');
+                    }
+
+                    if (!adminUser) {
+                        console.error('❌ User not in admin_users table');
+                        throw new Error('User account not found in system. Please contact administrator.');
+                    }
+
+                    console.log('✅ User found:', { role: adminUser.role, active: adminUser.active });
+
+                    if (!adminUser.active) {
+                        console.warn('⚠️ Account is inactive');
+                        // Sign out inactive user
+                        await supabaseClient.auth.signOut();
+                        throw new Error('Your account has been deactivated. Please contact administrator.');
+                    }
+
+                    // Redirect based on role
+                    console.log('🔄 Redirecting to dashboard (' + adminUser.role + ')');
+                    if (adminUser.role === 'super_admin') {
+                        window.location.href = 'super-admin.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                loadingDiv.style.display = 'none';
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = '❌ ' + error.message;
+            }
+        });
+        
+        console.log('✅ Login page script loaded and ready');
+    </script>
+</body>
+</html>

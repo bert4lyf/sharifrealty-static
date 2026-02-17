@@ -1,0 +1,12 @@
+{
+  "name": "sharifrealty-static",
+  "version": "1.0.0",
+  "description": "Static site with Netlify CMS admin",
+  "scripts": {
+    "start": "eleventy --serve",
+    "build": "eleventy"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^1.0.1"
+  }
+}
