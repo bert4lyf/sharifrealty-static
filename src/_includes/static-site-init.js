@@ -1,6 +1,40 @@
 // Fix for static site deployment - patches old WordPress functionality
 
 (function() {
+  // Global XHR and fetch interception to rewrite absolute WP AJAX URLs
+  try {
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+      try {
+        if (typeof url === 'string' && (url.includes('wp-admin/admin-ajax.php') || url.includes('sharifrealty.com/wp-admin')) ) {
+          url = url.replace(/https?:\/\/[^/]+/, '');
+          url = '/.netlify/functions/admin-ajax';
+        }
+      } catch (e) {
+        // swallow
+      }
+      return originalXHROpen.call(this, method, url, async, user, password);
+    };
+  } catch (e) {
+    console.warn('Could not patch XMLHttpRequest.open', e);
+  }
+
+  if (window.fetch) {
+    const _fetch = window.fetch.bind(window);
+    window.fetch = function(input, init) {
+      try {
+        if (typeof input === 'string' && (input.includes('wp-admin/admin-ajax.php') || input.includes('sharifrealty.com/wp-admin'))) {
+          input = '/.netlify/functions/admin-ajax';
+        } else if (input && input.url && (input.url.includes('wp-admin/admin-ajax.php') || input.url.includes('sharifrealty.com/wp-admin'))) {
+          input = new Request('/.netlify/functions/admin-ajax', input);
+        }
+      } catch (e) {
+        // swallow
+      }
+      return _fetch(input, init);
+    };
+  }
+
   // Redirect AJAX calls to our Netlify Function
   const originalAjax = jQuery.ajax;
   jQuery.ajax = function(settings) {
