@@ -35,6 +35,39 @@
     };
   }
 
+  // Immediately rewrite any existing asset URLs that point at the old domain
+  (function rewriteStaticAssets(){
+    try {
+      const domainRegex = /https?:\/\/([^/]*\.)?sharifrealty\.com/gi;
+      const protoRelRegex = /^(?:\\/\\/)(?:[^/]*\.)?sharifrealty\.com/;
+
+      document.querySelectorAll('link[href], script[src], img[src], source[src], source[srcset]').forEach(el => {
+        const tag = el.tagName.toLowerCase();
+        const attr = tag === 'link' ? 'href' : (el.hasAttribute('src') ? 'src' : (el.hasAttribute('srcset') ? 'srcset' : null));
+        if (!attr) return;
+        let val = el.getAttribute(attr);
+        if (!val) return;
+        // Remove protocol-relative and absolute references to the old domain
+        val = val.replace(domainRegex, '');
+        val = val.replace(protoRelRegex, '');
+        if (val && (val.startsWith('/') || !val.startsWith('http')) ) {
+          el.setAttribute(attr, val);
+        }
+      });
+
+      // Fix SR7 globals if already present
+      if (window.SR7 && window.SR7.E) {
+        ['ajaxurl','resturl','plugin_url','wp_plugin_url','slug_path'].forEach(k => {
+          if (window.SR7.E[k] && typeof window.SR7.E[k] === 'string') {
+            window.SR7.E[k] = window.SR7.E[k].replace(domainRegex, '').replace(protoRelRegex, '');
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('rewriteStaticAssets failed', e);
+    }
+  })();
+
   // Redirect AJAX calls to our Netlify Function
   const originalAjax = jQuery.ajax;
   jQuery.ajax = function(settings) {
