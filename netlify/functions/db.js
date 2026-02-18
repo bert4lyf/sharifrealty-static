@@ -3,30 +3,38 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-let cachedClient = null;
+let cachedAnon = null;
+let cachedAdmin = null;
 
-function getSupabase() {
-  if (cachedClient) {
-    return cachedClient;
+function getSupabaseAnon() {
+  if (cachedAnon) return cachedAnon;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('SUPABASE_URL or SUPABASE_ANON_KEY environment variables not set');
   }
 
-  try {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  cachedAnon = createClient(supabaseUrl, supabaseAnonKey);
+  console.log('Connected to Supabase (anon)');
+  return cachedAnon;
+}
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('SUPABASE_URL or SUPABASE_ANON_KEY environment variables not set');
-    }
+function getSupabaseAdmin() {
+  if (cachedAdmin) return cachedAdmin;
 
-    cachedClient = createClient(supabaseUrl, supabaseKey);
-    console.log('Connected to Supabase');
-    return cachedClient;
-  } catch (error) {
-    console.error('Supabase connection error:', error);
-    throw error;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables not set');
   }
+
+  cachedAdmin = createClient(supabaseUrl, serviceRoleKey);
+  console.log('Connected to Supabase (service role)');
+  return cachedAdmin;
 }
 
 module.exports = {
-  getSupabase
+  getSupabaseAnon,
+  getSupabaseAdmin
 };

@@ -1,14 +1,14 @@
 // User authentication handler
 // Using Supabase built-in authentication
 
-const { getSupabase } = require('./db');
+const { getSupabaseAnon, getSupabaseAdmin } = require('./db');
 
 async function registerUser(email, password, fullName) {
   try {
-    const supabase = getSupabase();
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Create user with Supabase auth (handles password hashing automatically)
-    const { data, error } = await supabase.auth.admin.createUser({
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase(),
       password: password,
       email_confirm: false,
@@ -49,7 +49,7 @@ async function registerUser(email, password, fullName) {
 
 async function loginUser(email, password) {
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAnon();
 
     // Use Supabase auth to sign in
     const { data, error } = await supabase.auth.signInWithPassword({

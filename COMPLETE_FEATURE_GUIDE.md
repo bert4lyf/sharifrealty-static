@@ -148,6 +148,13 @@ SUPABASE_ANON_KEY = your-anon-public-key-here
 6. Save changes
 7. Netlify will automatically redeploy
 
+Important: For server-side user creation we also use the Supabase service role key. Add this secret to Netlify as well:
+
+```
+SUPABASE_SERVICE_ROLE_KEY = your-service-role-key-here
+```
+Only set this in Netlify environment variables (do NOT expose it to client code).
+
 ---
 
 ## File Structure

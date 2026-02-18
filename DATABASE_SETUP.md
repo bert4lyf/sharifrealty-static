@@ -17,10 +17,11 @@
 ## Step 3: Get Your Project Keys
 1. Once the project is ready, go to **Settings** (bottom left)
 2. Click **"API"** in the settings
-3. Copy these two keys:
+3. Copy these keys:
    - **Project URL** (looks like `https://xxxxx.supabase.co`)
-   - **anon public** key (under Service_role is NOT what you want - use the public one)
-4. **SAVE BOTH KEYS** - You'll need them in Netlify
+   - **anon public** key (this is the public anon key used by client calls)
+   - **service_role** key (this is a secret key used for server-side admin actions)
+4. **SAVE THESE KEYS** - You'll need them in Netlify (store service_role securely)
 
 ## Step 4: Create User Table (Optional - Supabase Auth Handles This)
 Supabase's built-in auth table is already set up for you! You don't need to manually create anything.
@@ -30,12 +31,16 @@ Supabase's built-in auth table is already set up for you! You don't need to manu
 2. Open your site: `sharifrealty-static`
 3. Go to **Site settings** → **Build & deploy** → **Environment**
 4. Click "Edit variables"
-5. Add these two variables:
+
+5. Add these three variables (service_role key is required for server-side user creation):
 
 ```
 SUPABASE_URL = https://xxxxx.supabase.co
 SUPABASE_ANON_KEY = your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY = your-service-role-key-here
 ```
+
+**Important:** The `SUPABASE_SERVICE_ROLE_KEY` is powerful and should be kept secret. Add it only to Netlify environment variables (do NOT publish it in client code or commit it to the repo).
 
 6. Click **Save & Deploy** - Netlify will automatically redeploy
 
