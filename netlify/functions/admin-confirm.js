@@ -46,12 +46,23 @@ export default async (req, context) => {
     if (action === 'confirm') {
       console.log(`Auto-confirming admin user: ${email}`);
 
-      // Use admin API to mark user as confirmed
-      const { data: user, error: getUserError } = await supabase.auth.admin.getUserByEmail(email);
+      // Use admin API to list users and find by email
+      const { data: users, error: listError } = await supabase.auth.admin.listUsers();
 
-      if (getUserError || !user) {
+      if (listError || !users) {
+        console.error('List users error:', listError);
         return new Response(JSON.stringify({ 
-          error: 'User not found: ' + (getUserError?.message || 'Unknown') 
+          error: 'Failed to list users: ' + (listError?.message || 'Unknown') 
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const user = users.find(u => u.email === email);
+      if (!user) {
+        return new Response(JSON.stringify({ 
+          error: `User not found: ${email}` 
         }), {
           status: 404,
           headers: { 'Content-Type': 'application/json' }
