@@ -162,6 +162,23 @@
       }
     }
 
+    // Inject fallback CSS to ensure slider containers are visible
+    (function ensureSliderVisibility(){
+      try {
+        const css = `
+          .sr7-module, .rev_slider, .rev_slider_wrapper, .rev_slider * { visibility: visible !important; opacity: 1 !important; }
+          .sr7-module { display: block !important; }
+          .sr7-module img, .rev_slider img { max-width: 100% !important; height: auto !important; display: block !important; }
+        `;
+        const style = document.createElement('style');
+        style.setAttribute('data-runtime-slider-fix', '1');
+        style.appendChild(document.createTextNode(css));
+        document.head.appendChild(style);
+      } catch (e) {
+        // ignore
+      }
+    })();
+
     // Force slider reflow if visible
     setTimeout(() => {
       try {

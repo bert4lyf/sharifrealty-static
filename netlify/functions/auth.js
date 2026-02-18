@@ -88,6 +88,21 @@ async function loginUser(email, password) {
     };
   } catch (error) {
     console.error('Login error:', error);
+    // Map common Supabase errors to friendly messages
+    const msg = (error && (error.message || error.error_description || '')) || '';
+    if (msg.toLowerCase().includes('email') && msg.toLowerCase().includes('confirm')) {
+      return {
+        success: false,
+        error: 'Email not confirmed. Please check your inbox and click the verification link.'
+      };
+    }
+    if (msg.toLowerCase().includes('invalid grant') || msg.toLowerCase().includes('invalid_grant')) {
+      return {
+        success: false,
+        error: 'Email not confirmed or invalid credentials. Please verify your email first.'
+      };
+    }
+
     return {
       success: false,
       error: error.message || 'Login failed'
