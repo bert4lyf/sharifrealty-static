@@ -1,41 +1,41 @@
 // User authentication handler
-const bcrypt = require('bcryptjs');
-const { getUsersCollection } = require('./db');
+// Using Supabase built-in authentication
+
+const { getSupabase } = require('./db');
 
 async function registerUser(email, password, fullName) {
   try {
-    const users = await getUsersCollection();
+    const supabase = getSupabase();
 
-    // Check if user already exists
-    const existingUser = await users.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return {
-        success: false,
-        error: 'Email already registered. Please try logging in.'
-      };
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
-    const result = await users.insertOne({
+    // Create user with Supabase auth (handles password hashing automatically)
+    const { data, error } = await supabase.auth.admin.createUser({
       email: email.toLowerCase(),
-      password: hashedPassword,
-      fullName: fullName || '',
-      createdAt: new Date(),
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zip: '',
-      role: 'user'
+      password: password,
+      email_confirm: false,
+      user_metadata: {
+        full_name: fullName || '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zip: ''
+      }
     });
+
+    if (error) {
+      // Check if error is due to duplicate user
+      if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+        return {
+          success: false,
+          error: 'Email already registered. Please try logging in.'
+        };
+      }
+      throw error;
+    }
 
     return {
       success: true,
-      userId: result.insertedId,
+      userId: data.user.id,
       message: 'Registration successful! You can now log in.'
     };
   } catch (error) {
@@ -49,39 +49,41 @@ async function registerUser(email, password, fullName) {
 
 async function loginUser(email, password) {
   try {
-    const users = await getUsersCollection();
+    const supabase = getSupabase();
 
-    // Find user
-    const user = await users.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return {
-        success: false,
-        error: 'Email not found. Please register first.'
-      };
+    // Use Supabase auth to sign in
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password: password
+    });
+
+    if (error) {
+      if (error.message.includes('Invalid login credentials')) {
+        return {
+          success: false,
+          error: 'Email or password is incorrect'
+        };
+      }
+      throw error;
     }
 
-    // Check password
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return {
-        success: false,
-        error: 'Incorrect password'
-      };
-    }
+    // Get user metadata
+    const user = data.user;
+    const userMetadata = user.user_metadata || {};
 
-    // Return user data (without password)
     return {
       success: true,
       user: {
-        id: user._id,
+        id: user.id,
         email: user.email,
-        fullName: user.fullName,
-        phone: user.phone,
-        address: user.address,
-        city: user.city,
-        state: user.state,
-        zip: user.zip
+        fullName: userMetadata.full_name || '',
+        phone: userMetadata.phone || '',
+        address: userMetadata.address || '',
+        city: userMetadata.city || '',
+        state: userMetadata.state || '',
+        zip: userMetadata.zip || ''
       },
+      session: data.session,
       message: 'Login successful'
     };
   } catch (error) {

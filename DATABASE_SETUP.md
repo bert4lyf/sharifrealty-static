@@ -1,74 +1,101 @@
-# Database Setup Guide - MongoDB Atlas
+# Database Setup Guide - Supabase (PostgreSQL)
 
-## Step 1: Create MongoDB Account
-1. Go to https://www.mongodb.com/cloud/atlas
-2. Click "Try Free" and sign up with your email
-3. Create an account
+## Step 1: Create Supabase Account
+1. Go to https://supabase.com
+2. Click "Start your project" or sign up
+3. Sign in with GitHub or email
+4. Create an account
 
-## Step 2: Create a Free Cluster
-1. After signing in, click "Create a deployment"
-2. Select **M0 (Free tier)** - it's completely free
-3. Choose your cloud provider (AWS recommended)
-4. Choose a region (pick closest to your users)
-5. Click "Create Deployment" and wait a few minutes
+## Step 2: Create a New Project
+1. After signing in, click "New Project"
+2. Choose a **project name**: `sharifrealty` (or any name you like)
+3. Choose a **database password** (make it strong!) - **SAVE THIS**
+4. Choose your **region** (pick closest to your users)
+5. Click "Create new project"
+6. Wait a few minutes for the database to be created
 
-## Step 3: Create Database User
-1. In the left sidebar, click "Database Access"
-2. Click "Add new database user"
-3. Create a username (e.g., `sharealty_user`) and password (make it strong!)
-4. Select "Autogenerate a secure password" for a strong password
-5. Click "Add User"
-6. **SAVE THIS PASSWORD - YOU'LL NEED IT**
+## Step 3: Get Your Project Keys
+1. Once the project is ready, go to **Settings** (bottom left)
+2. Click **"API"** in the settings
+3. Copy these two keys:
+   - **Project URL** (looks like `https://xxxxx.supabase.co`)
+   - **anon public** key (under Service_role is NOT what you want - use the public one)
+4. **SAVE BOTH KEYS** - You'll need them in Netlify
 
-## Step 4: Add Your IP Address
-1. In the left sidebar, click "Network Access"
-2. Click "Add IP Address"
-3. Select "Allow access from anywhere" (or add your specific IP)
-4. Click "Confirm"
+## Step 4: Create User Table (Optional - Supabase Auth Handles This)
+Supabase's built-in auth table is already set up for you! You don't need to manually create anything.
 
-## Step 5: Get Your Connection String
-1. Go back to "Database" (main page)
-2. Click "Connect" on your cluster
-3. Select "Drivers" → "Node.js"
-4. Copy the connection string (it looks like `mongodb+srv://...`)
-5. Replace `<username>` with your database user
-6. Replace `<password>` with the password you saved
-7. Replace the database name if needed (keep it as `sharifrealty` or change it)
-
-## Step 6: Add to Netlify Environment Variables
+## Step 5: Add to Netlify Environment Variables
 1. Go to https://app.netlify.com
-2. Open your site (sharifrealty-static)
+2. Open your site: `sharifrealty-static`
 3. Go to **Site settings** → **Build & deploy** → **Environment**
 4. Click "Edit variables"
-5. Add a new variable:
-   - **Key**: `MONGODB_URI`
-   - **Value**: Paste your connection string from Step 5
-6. Click "Save"
+5. Add these two variables:
 
-## Step 7: Trigger a Redeploy
-1. Go back to your Netlify site dashboard
-2. Go to **Deploys** tab
-3. Click the three dots on the latest deploy and select **Trigger deploy**
-4. Wait for it to complete (typically 1-2 minutes)
+```
+SUPABASE_URL = https://xxxxx.supabase.co
+SUPABASE_ANON_KEY = your-anon-key-here
+```
+
+6. Click **Save & Deploy** - Netlify will automatically redeploy
+
+## Step 6: Trigger Redeploy (if not automatic)
+1. If it doesn't redeploy automatically:
+   - Go to **Deploys** tab
+   - Click the three dots on latest deploy
+   - Select **Trigger deploy**
+2. Wait for build to complete (1-2 minutes)
 
 ## That's It!
-Your site now has a working database. Users can now:
+Your site now has a working PostgreSQL database with authentication. Users can now:
 - **Sign up** with email and password
 - **Log in** with their credentials  
-- **Data is stored** in MongoDB
+- **Data is stored securely** in PostgreSQL
+- **Passwords automatically encrypted** by Supabase
 
 ## Important Notes
-- MongoDB stores passwords encrypted with bcrypt
-- Free tier supports up to 512MB of data (more than enough for user accounts)
+- Supabase automatically handles password hashing and encryption
+- Built-in RLS (Row Level Security) for advanced security
+- Free tier supports unlimited users (up to 500MB storage)
 - No credit card required for free tier
-- Data is automatically backed up by MongoDB
+- Automatic daily backups included
+- Can upgrade anytime if you need more space
 
 ## Testing
 1. Go to https://sharifrealty-static.netlify.app/sign-in-2/
-2. Try registering with a test email
-3. Try logging in with the credentials you just created
+2. Try **registering** with a test email
+3. Try **logging in** with the credentials you just created
+4. Check **browser console** (F12) if you have any issues
 
-If you have any issues, check:
-- Netlify logs: Site settings → Build & deploy → Deploy log
-- MongoDB for any errors in the cluster
+## Viewing Your Users
+1. Go to https://app.supabase.com
+2. Open your project
+3. Go to **Authentication** → **Users** in left sidebar
+4. You'll see all registered users with their email and signup date
+
+## Troubleshooting
+
+### "Invalid API Key" error
+- Check that you copied the keys correctly
+- Make sure you're using the PUBLIC key, not the service role key
+- Redeploy your site after adding variables
+
+### "Connection timeout"
+- Make sure SUPABASE_URL is copied correctly (should start with https://)
+- Check that the project is running (go to supabase.com/projects)
+
+### Users can register but can't login
+- Check Netlify logs for errors
+- Check Supabase project status
+- Verify environment variables are correct
+
+## Next Steps
+- Test the forms
+- Check Supabase dashboard to see users being created
+- Optional: Add email verification or password reset
+- Optional: Set up custom email templates
+
+---
+
+**Status**: Much simpler than MongoDB! Supabase handles password encryption and user management for you.
 

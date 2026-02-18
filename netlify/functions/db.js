@@ -1,44 +1,32 @@
 // Database configuration and utilities
-// Using MongoDB for user storage
+// Using Supabase PostgreSQL
 
-const mongodb = require('mongodb');
+const { createClient } = require('@supabase/supabase-js');
 
 let cachedClient = null;
 
-async function connectDB() {
+function getSupabase() {
   if (cachedClient) {
     return cachedClient;
   }
 
   try {
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-      throw new Error('MONGODB_URI environment variable not set');
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_URL or SUPABASE_ANON_KEY environment variables not set');
     }
 
-    const client = new mongodb.MongoClient(mongoUri);
-    await client.connect();
-    cachedClient = client;
-    console.log('Connected to MongoDB');
-    return client;
+    cachedClient = createClient(supabaseUrl, supabaseKey);
+    console.log('Connected to Supabase');
+    return cachedClient;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('Supabase connection error:', error);
     throw error;
   }
 }
 
-async function getDB() {
-  const client = await connectDB();
-  return client.db('sharifrealty');
-}
-
-async function getUsersCollection() {
-  const db = await getDB();
-  return db.collection('users');
-}
-
 module.exports = {
-  connectDB,
-  getDB,
-  getUsersCollection
+  getSupabase
 };
