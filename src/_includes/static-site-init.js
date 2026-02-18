@@ -50,36 +50,65 @@
     // Try multiple initialization methods
     if (typeof SR7 !== 'undefined') {
       try {
+        // Update AJAX URL to new endpoint if needed
+        if (window.SR7 && window.SR7.E) {
+          window.SR7.E.ajaxurl = '/.netlify/functions/admin-ajax';
+        }
+
+        // Initialize Slider Revolution Framework
         if (SR7.F && SR7.F.init) {
           SR7.F.init();
         }
+
+        // Start all revolution sliders
         if (window.revapi && window.revapi.length > 0) {
-          window.revapi.forEach(api => {
+          window.revapi.forEach((api, index) => {
             if (api && api.revstart) {
-              setTimeout(() => api.revstart(), 100);
+              console.log('Starting slider ' + index);
+              setTimeout(() => {
+                try {
+                  api.revstart();
+                } catch (e) {
+                  console.warn('Could not start slider:', e);
+                }
+              }, 100 + (index * 50));
             }
           });
         }
+
+        // Also try direct jQuery initialization
+        setTimeout(() => {
+          if (typeof jQuery !== 'undefined' && jQuery.fn.revolution) {
+            jQuery('.rev_slider, [class*="revolution"]').each(function() {
+              try {
+                jQuery(this).revolution('init');
+              } catch (e) {
+                // Slider already initialized
+              }
+            });
+          }
+        }, 500);
+
         console.log('Slider Revolution initialized');
       } catch (e) {
         console.warn('Could not initialize Slider Revolution:', e);
       }
     }
 
-    // Also try jQuery Slider plugin initialization
-    if (typeof jQuery !== 'undefined') {
+    // Force slider reflow if visible
+    setTimeout(() => {
       try {
-        jQuery(document).ready(function($) {
-          // Reinitialize any sliders
-          if (typeof revslider !== 'undefined') {
-            console.log('Revslider found, reinitializing...');
-            revslider();
-          }
-        });
+        if (window.revapi && window.revapi.length > 0) {
+          window.revapi.forEach(api => {
+            if (api && typeof api.revredraw === 'function') {
+              api.revredraw();
+            }
+          });
+        }
       } catch (e) {
-        console.warn('Could not initialize jQuery sliders:', e);
+        console.warn('Slider redraw error:', e);
       }
-    }
+    }, 1000);
 
     // Fix authentication redirects
     if (window.location.pathname.includes('/sign-in') || window.location.pathname.includes('/register')) {
