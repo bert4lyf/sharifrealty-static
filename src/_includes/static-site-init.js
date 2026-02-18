@@ -113,69 +113,107 @@
       }
     });
 
-    // Initialize Slider Revolution if it exists
-    // Try multiple initialization methods
-    if (typeof SR7 !== 'undefined') {
+    // Initialize Slider Revolution - SIMPLIFIED AND DIRECT
+    console.log('[Slider Init] Starting initialization...');
+    console.log('[Slider Init] SR7 defined?', typeof SR7 !== 'undefined');
+    console.log('[Slider Init] revapi array?', window.revapi ? window.revapi.length : 'none');
+
+    // Try immediate init if SR7 exists
+    if (typeof SR7 !== 'undefined' && SR7.F && typeof SR7.F.init === 'function') {
       try {
-        // Update AJAX URL to new endpoint if needed
-        if (window.SR7 && window.SR7.E) {
-          window.SR7.E.ajaxurl = '/.netlify/functions/admin-ajax';
-        }
-
-        // Initialize Slider Revolution Framework
-        if (SR7.F && SR7.F.init) {
-          SR7.F.init();
-        }
-
-        // Start all revolution sliders
-        if (window.revapi && window.revapi.length > 0) {
-          window.revapi.forEach((api, index) => {
-            if (api && api.revstart) {
-              console.log('Starting slider ' + index);
-              setTimeout(() => {
-                try {
-                  api.revstart();
-                } catch (e) {
-                  console.warn('Could not start slider:', e);
-                }
-              }, 100 + (index * 50));
-            }
-          });
-        }
-
-        // Also try direct jQuery initialization
-        setTimeout(() => {
-          if (typeof jQuery !== 'undefined' && jQuery.fn.revolution) {
-            jQuery('.rev_slider, [class*="revolution"]').each(function() {
-              try {
-                jQuery(this).revolution('init');
-              } catch (e) {
-                // Slider already initialized
-              }
-            });
-          }
-        }, 500);
-
-        console.log('Slider Revolution initialized');
+        console.log('[Slider Init] Calling SR7.F.init()');
+        SR7.F.init();
       } catch (e) {
-        console.warn('Could not initialize Slider Revolution:', e);
+        console.warn('[Slider Init] SR7.F.init() error:', e);
       }
     }
 
-    // Inject fallback CSS to ensure slider containers are visible
-    (function ensureSliderVisibility(){
-      try {
-        const css = `
-          .sr7-module, .rev_slider, .rev_slider_wrapper, .rev_slider * { visibility: visible !important; opacity: 1 !important; }
-          .sr7-module { display: block !important; }
-          .sr7-module img, .rev_slider img { max-width: 100% !important; height: auto !important; display: block !important; }
-        `;
-        const style = document.createElement('style');
-        style.setAttribute('data-runtime-slider-fix', '1');
-        style.appendChild(document.createTextNode(css));
-        document.head.appendChild(style);
-      } catch (e) {
-        // ignore
+    // Try revapi initialization if it exists
+    if (window.revapi && Array.isArray(window.revapi) && window.revapi.length > 0) {
+      console.log('[Slider Init] Found revapi with', window.revapi.length, 'sliders');
+      window.revapi.forEach((api, index) => {
+        if (api) {
+          try {
+            console.log('[Slider Init] Initializing revapi[' + index + ']');
+            if (typeof api.revstart === 'function') api.revstart();
+            if (typeof api.revredraw === 'function') api.revredraw();
+          } catch (e) {
+            console.warn('[Slider Init] revapi[' + index + '] error:', e);
+          }
+        }
+      });
+    }
+
+    // Delayed initialization attempts
+    setTimeout(() => {
+      console.log('[Slider Init] Delayed init (500ms)');
+      if (typeof SR7 !== 'undefined' && SR7.F && typeof SR7.F.init === 'function') {
+        try {
+          SR7.F.init();
+        } catch (e) {
+          console.warn('[Slider Init] Delayed SR7.F.init() error:', e);
+        }
+      }
+    }, 500);
+
+    setTimeout(() => {
+      console.log('[Slider Init] Delayed redraw (1500ms)');
+      if (window.revapi && Array.isArray(window.revapi)) {
+        window.revapi.forEach((api, index) => {
+          if (api && typeof api.revredraw === 'function') {
+            try {
+              api.revredraw();
+            } catch (e) {
+              console.warn('[Slider Init] revredraw error:', e);
+            }
+          }
+        });
+      }
+    }, 1500);
+
+// FORCE SLIDER VISIBILITY - AGGRESSIVE CSS
+  (function ensureSliderVisibility(){
+    try {
+      const css = `
+        /* FORCE ALL SLIDER ELEMENTS VISIBLE */
+        .sr7-module, .rev_slider, .rev_slider_wrapper, 
+        [class*="revslider-"], [class*="rev-"], [id*="slider"],
+        .rs-layer, .tp-leftarrow, .tp-rightarrow, .tp-bullets {
+          visibility: visible !important; 
+          opacity: 1 !important; 
+          display: block !important;
+        }
+        
+        /* FORCE IMAGES IN SLIDER */
+        .sr7-module img, .rev_slider img, .rs-layer img {
+          max-width: 100% !important;
+          height: auto !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        
+        /* ENSURE SLIDER CONTAINER HAS DIMENSIONS */
+        .rev_slider, .rs-slider {
+          width: 100% !important;
+          height: auto !important;
+          min-height: 300px !important;
+          position: relative !important;
+          display: block !important;
+        }
+        
+        /* OVERRIDE HIDDEN STATES */
+        [style*="display: none"] { display: block !important; }
+        [style*="visibility: hidden"] { visibility: visible !important; }
+        [style*="opacity: 0"] { opacity: 1 !important; }
+      `;
+      const style = document.createElement('style');
+      style.setAttribute('data-runtime-slider-fix', '1');
+      style.appendChild(document.createTextNode(css));
+      document.head.insertBefore(style, document.head.firstChild);
+      console.log('[Slider Fix] CSS injected at top of head');
+    } catch (e) {
+      console.warn('[Slider Fix] CSS injection failed:', e);
       }
     })();
 
