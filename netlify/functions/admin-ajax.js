@@ -1,6 +1,8 @@
 // Netlify Function to handle all AJAX requests from the old WordPress site
 // This replaces wp-admin/admin-ajax.php
 
+const { registerUser, loginUser } = require('./auth');
+
 exports.handler = async (event, context) => {
   // Enable CORS
   const headers = {
@@ -35,7 +37,7 @@ exports.handler = async (event, context) => {
     console.log('AJAX Request:', {
       action,
       method: event.httpMethod,
-      body
+      body: { ...body, password: body.password ? '***' : undefined }
     });
 
     // Handle different actions
@@ -50,8 +52,10 @@ exports.handler = async (event, context) => {
         return handlePropertyAction(body, action, headers);
 
       case 'login_user':
+        return await handleLogin(body, headers);
+
       case 'register_user':
-        return handleAuthentication(body, action, headers);
+        return await handleRegister(body, headers);
 
       default:
         return {
@@ -120,17 +124,91 @@ function handlePropertyAction(body, action, headers) {
   };
 }
 
-function handleAuthentication(body, action, headers) {
-  console.log(`Handling authentication: ${action}`);
+async function handleLogin(body, headers) {
+  const { user_login, user_email, user_pass } = body;
+  const email = user_email || user_login;
 
-  // Return success for auth (actual auth should use Netlify Identity)
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      success: true,
-      message: 'Please use the sign-in page for authentication',
-      redirect: '/sign-in-2/'
-    }),
-    headers
-  };
+  if (!email || !user_pass) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        success: false,
+        error: 'Email and password are required'
+      }),
+      headers
+    };
+  }
+
+  const result = await loginUser(email, user_pass);
+
+  if (result.success) {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        data: result.user,
+        message: result.message
+      }),
+      headers
+    };
+  } else {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({
+        success: false,
+        error: result.error
+      }),
+      headers
+    };
+  }
+}
+
+async function handleRegister(body, headers) {
+  const { user_email, user_pass, user_pass_confirm, first_name, last_name } = body;
+
+  // Validation
+  if (!user_email || !user_pass) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        success: false,
+        error: 'Email and password are required'
+      }),
+      headers
+    };
+  }
+
+  if (user_pass !== user_pass_confirm) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        success: false,
+        error: 'Passwords do not match'
+      }),
+      headers
+    };
+  }
+
+  const fullName = `${first_name || ''} ${last_name || ''}`.trim();
+  const result = await registerUser(user_email, user_pass, fullName);
+
+  if (result.success) {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        message: result.message
+      }),
+      headers
+    };
+  } else {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        success: false,
+        error: result.error
+      }),
+      headers
+    };
+  }
 }

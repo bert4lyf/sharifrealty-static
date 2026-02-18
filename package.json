@@ -7,7 +7,9 @@
     "build": "eleventy"
   },
   "dependencies": {
-    "nodemailer": "^6.9.4"
+    "nodemailer": "^6.9.4",
+    "bcryptjs": "^2.4.3",
+    "mongodb": "^6.0.0"
   },
   "devDependencies": {
     "@11ty/eleventy": "^1.0.1"

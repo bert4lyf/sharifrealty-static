@@ -47,12 +47,37 @@
     });
 
     // Initialize Slider Revolution if it exists
-    if (typeof SR7 !== 'undefined' && SR7.F && SR7.F.init) {
+    // Try multiple initialization methods
+    if (typeof SR7 !== 'undefined') {
       try {
-        SR7.F.init();
+        if (SR7.F && SR7.F.init) {
+          SR7.F.init();
+        }
+        if (window.revapi && window.revapi.length > 0) {
+          window.revapi.forEach(api => {
+            if (api && api.revstart) {
+              setTimeout(() => api.revstart(), 100);
+            }
+          });
+        }
         console.log('Slider Revolution initialized');
       } catch (e) {
         console.warn('Could not initialize Slider Revolution:', e);
+      }
+    }
+
+    // Also try jQuery Slider plugin initialization
+    if (typeof jQuery !== 'undefined') {
+      try {
+        jQuery(document).ready(function($) {
+          // Reinitialize any sliders
+          if (typeof revslider !== 'undefined') {
+            console.log('Revslider found, reinitializing...');
+            revslider();
+          }
+        });
+      } catch (e) {
+        console.warn('Could not initialize jQuery sliders:', e);
       }
     }
 
@@ -70,7 +95,133 @@
     jQuery(document).ready(function($) {
       console.log('jQuery ready - applying patches');
 
-      // Intercept all form submissions that go to WordPress
+      // Intercept login form submissions
+      $('form.login, form.wpestate_login_form, form[class*="login"]').on('submit', function(e) {
+        const $form = $(this);
+        
+        // Check if this is already being handled
+        if ($form.data('patched')) return true;
+        $form.data('patched', true);
+
+        e.preventDefault();
+
+        const email = $form.find('input[name="user_login"], input[name="user_email"]').val();
+        const password = $form.find('input[name="user_pass"]').val();
+
+        if (!email || !password) {
+          alert('Please enter email and password');
+          return false;
+        }
+
+        const $button = $form.find('button[type="submit"]');
+        const originalText = $button.text();
+        $button.prop('disabled', true).text('Logging in...');
+
+        console.log('Handling login for:', email);
+
+        fetch('/.netlify/functions/admin-ajax', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'login_user',
+            user_login: email,
+            user_email: email,
+            user_pass: password
+          })
+        })
+        .then(response => response.json())
+        .then(result => {
+          console.log('Login result:', result);
+          if (result.success) {
+            // Store user data in localStorage
+            localStorage.setItem('user', JSON.stringify(result.data));
+            localStorage.setItem('loggedIn', 'true');
+            alert('Login successful! Redirecting...');
+            window.location.href = '/dashboard-2/';
+          } else {
+            alert('Login failed: ' + (result.error || result.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          console.error('Login error:', error);
+          alert('Error during login. Please try again.');
+        })
+        .finally(() => {
+          $button.prop('disabled', false).text(originalText);
+        });
+
+        return false;
+      });
+
+      // Intercept registration form submissions
+      $('form.register, form.wpestate_register_form, form[class*="register"]').on('submit', function(e) {
+        const $form = $(this);
+        
+        if ($form.data('patched')) return true;
+        $form.data('patched', true);
+
+        e.preventDefault();
+
+        const email = $form.find('input[name="user_email"]').val();
+        const password = $form.find('input[name="user_pass"]').val();
+        const passwordConfirm = $form.find('input[name="user_pass_confirm"], input[name="user_password_repeat"]').val();
+        const firstName = $form.find('input[name="first_name"]').val() || '';
+        const lastName = $form.find('input[name="last_name"]').val() || '';
+
+        if (!email || !password || !passwordConfirm) {
+          alert('Please fill in all fields');
+          return false;
+        }
+
+        if (password !== passwordConfirm) {
+          alert('Passwords do not match');
+          return false;
+        }
+
+        const $button = $form.find('button[type="submit"]');
+        const originalText = $button.text();
+        $button.prop('disabled', true).text('Registering...');
+
+        console.log('Handling registration for:', email);
+
+        fetch('/.netlify/functions/admin-ajax', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'register_user',
+            user_email: email,
+            user_pass: password,
+            user_pass_confirm: passwordConfirm,
+            first_name: firstName,
+            last_name: lastName
+          })
+        })
+        .then(response => response.json())
+        .then(result => {
+          console.log('Registration result:', result);
+          if (result.success) {
+            alert('Registration successful! Please log in now.');
+            window.location.href = '/sign-in-2/';
+          } else {
+            alert('Registration failed: ' + (result.error || result.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          console.error('Registration error:', error);
+          alert('Error during registration. Please try again.');
+        })
+        .finally(() => {
+          $button.prop('disabled', false).text(originalText);
+        });
+
+        return false;
+      });
+
+      // Intercept all other form submissions that go to WordPress
       $('form').on('submit', function(e) {
         const action = $(this).attr('action');
         if (action && action.includes('sharifrealty.com')) {
