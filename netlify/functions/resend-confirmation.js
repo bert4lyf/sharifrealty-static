@@ -21,7 +21,12 @@ export default async (req, context) => {
   }
 
   try {
-    const { email } = JSON.parse(req.body || '{}');
+    // Handle body parsing - it might be a string or stream
+    let body = req.body;
+    if (typeof body !== 'string') {
+      body = await req.text();
+    }
+    const { email } = JSON.parse(body || '{}');
 
     if (!email) {
       return new Response(JSON.stringify({ error: 'Email is required' }), {

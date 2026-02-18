@@ -22,7 +22,12 @@ export default async (req, context) => {
   }
 
   try {
-    const { action, email } = JSON.parse(req.body || '{}');
+    // Handle body parsing - it might be a string or stream
+    let body = req.body;
+    if (typeof body !== 'string') {
+      body = await req.text();
+    }
+    const { action, email } = JSON.parse(body || '{}');
 
     if (!action || !email) {
       return new Response(JSON.stringify({ error: 'Missing action or email' }), {
