@@ -48,19 +48,23 @@ export default async (req, context) => {
     console.log(`Resending confirmation email to: ${email}`);
 
     // Get the user by listing and filtering
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+    const { data: userData, error: listError } = await supabase.auth.admin.listUsers();
     
-    if (listError || !users) {
+    if (listError) {
       console.error('List users error:', listError);
       return new Response(JSON.stringify({ 
-        error: 'Failed to list users: ' + (listError?.message || 'Unknown') 
+        error: 'Failed to list users: ' + listError.message 
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const user = users.find(u => u.email === email);
+    // userData might be { users: [...] } or just [...]
+    const users = userData?.users || userData || [];
+    console.log('Found users:', users.length);
+    
+    const user = Array.isArray(users) ? users.find(u => u.email === email) : null;
     if (!user) {
       return new Response(JSON.stringify({ 
         error: `User not found: ${email}` 
