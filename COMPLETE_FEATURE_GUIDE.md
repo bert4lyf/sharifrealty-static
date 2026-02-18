@@ -25,27 +25,29 @@
 - **Login Forms**: Secure authentication with hashed passwords
 - **Error Messages**: User-friendly feedback on form submission
 
-### ✅ Database (MongoDB)
-- **Location**: MongoDB Atlas (cloud, free tier)
-- **Collections**: 
-  - `users`: Stores user accounts with encrypted passwords
-  - Ready for more collections (properties, inquiries, etc.)
-- **Security**: Passwords encrypted with bcrypt (industry standard)
+### ✅ Database (Supabase PostgreSQL)
+- **Location**: Supabase (cloud, free tier)
+- **Features**: 
+  - Built-in user authentication (automatic password hashing)
+  - PostgreSQL reliability
+  - RLS (Row Level Security) for advanced security
+  - Unlimited users, 500MB storage on free tier
+  - Automatic daily backups
+- **No manual setup needed** - Supabase handles everything!
 
 ---
 
-## Getting Started - Database Setup
+## Getting Started - Supabase Setup
 
 ### CRITICAL: You Must Do This First!
 
-1. **Go to https://www.mongodb.com/cloud/atlas**
+1. **Go to https://supabase.com**
 2. **Sign up** (free account, no credit card needed)
-3. **Create a free cluster** (M0 tier)
-4. **Create database user** with a strong password
-5. **Get your connection string**
-6. **Follow the steps in DATABASE_SETUP.md** (in the project root)
+3. **Create a new project** with a strong password
+4. **Copy your keys** from Settings → API
+5. **Follow the steps in DATABASE_SETUP.md** (in the project root)
 
-Your site **will not work** until MongoDB is set up!
+Your site **will not work** until Supabase is set up!
 
 ---
 
@@ -96,18 +98,17 @@ Your site **will not work** until MongoDB is set up!
 
 #### `auth.js` (User Authentication)
 - `registerUser()`: Creates new user accounts
-  - Validates email uniqueness
-  - Hashes password with bcrypt
-  - Stores to MongoDB
+  - Uses Supabase built-in auth
+  - Automatic password hashing
+  - Stores to PostgreSQL
 - `loginUser()`: Authenticates users
-  - Verifies email exists
-  - Compares password hash
+  - Uses Supabase session management
+  - Verifies credentials securely
   - Returns user data on success
 
 #### `db.js` (Database Connection)
-- Manages MongoDB connection pooling
-- Provides `getUsersCollection()` for querying users
-- Handles connection caching for performance
+- Manages Supabase client connection
+- Provides access to PostgreSQL database
 
 ### JavaScript Patches (Static Site)
 
@@ -131,10 +132,11 @@ Your site **will not work** until MongoDB is set up!
 
 ## Environment Variables (Netlify)
 
-You need to add this to Netlify:
+You need to add these two variables to Netlify:
 
 ```
-MONGODB_URI = mongodb+srv://[username]:[password]@[cluster-url]/sharifrealty?retryWrites=true&w=majority
+SUPABASE_URL = https://xxxxx.supabase.co
+SUPABASE_ANON_KEY = your-anon-public-key-here
 ```
 
 **How to set it:**
@@ -142,7 +144,7 @@ MONGODB_URI = mongodb+srv://[username]:[password]@[cluster-url]/sharifrealty?ret
 2. Select `sharifrealty-static` site
 3. Site settings → Build & deploy → Environment
 4. Click "Edit variables"
-5. Add the MongoDB URI
+5. Add both environment variables
 6. Save changes
 7. Netlify will automatically redeploy
 
@@ -172,9 +174,10 @@ src/
 
 ### "Registration keeps loading" or "Login not working"
 **Check**: 
-1. MongoDB not set up → Follow DATABASE_SETUP.md
-2. Netlify API not redeployed → Check Netlify "Deploys" tab, click "Redeploy"
-3. Browser console errors → Press F12, check Console tab
+1. Supabase project not set up → Follow DATABASE_SETUP.md
+2. Netlify API environment variables not added → Check Netlify settings
+3. Netlify not redeployed → Check Netlify "Deploys" tab, click "Redeploy"
+4. Browser console errors → Press F12, check Console tab
 
 ### Slider not showing
 **Check**:
@@ -183,9 +186,9 @@ src/
 3. Try refreshing the page
 4. Try a different browser
 
-### "Email already registered" on signup
+### "Email already exists" on signup
 **This is working correctly!** It means:
-- MongoDB is connected and working
+- Supabase is connected and working
 - A user with that email already exists
 - Try a different email address
 
@@ -194,6 +197,17 @@ src/
 1. Network tab (F12 → Network) for failed requests
 2. Check if Netlify functions deployed successfully
 3. Check Netlify logs for errors
+
+### "Invalid API Key" error
+- Check that you copied the keys correctly from Supabase
+- Make sure you're using the PUBLIC anon key (not service_role)
+- Redeploy your site after adding variables
+
+### Can't see users in Supabase
+1. Go to https://app.supabase.com
+2. Open your project
+3. Go to **Authentication** → **Users** in left sidebar
+4. All registered users should appear there with timestamps
 
 ---
 
@@ -204,25 +218,25 @@ src/
 - Add SendGrid/Mailgun API for real emails
 - Update `netlify/functions/admin-ajax.js`
 
-### 2. User Dashboard
+### 2. Email Verification
+- Supabase supports email verification templates
+- Enable in Supabase settings
+- Users must verify email before accessing dashboard
+
+### 3. User Dashboard
 - Use `getCurrentUser()` to display user info
-- Update user profiles
-- View user's listings
+- Update user profiles from dashboard
+- View user's listings and activity
 
-### 3. Property Listings
-- Create new MongoDB collection for properties
+### 4. Property Listings
+- Create PostgreSQL table for properties
+- Connect to user profiles with foreign keys
 - Add property upload form
-- Add property search functionality
-
-### 4. Email Verification
-- Send verification email on signup
-- Mark email as verified before allowing login
-- Update user verification status in MongoDB
 
 ### 5. Password Recovery
-- Add "Forgot Password" link
-- Send password reset email
-- Allow user to set new password
+- Supabase supports password reset emails
+- Enable in Supabase settings
+- User gets reset link via email
 
 ---
 
@@ -230,12 +244,12 @@ src/
 
 - [x] Static site built with Eleventy
 - [x] Netlify Functions created for backend
-- [x] MongoDB database schema designed
+- [x] Supabase PostgreSQL database configured
 - [x] User authentication implemented
 - [x] Form handling implemented
 - [x] Slider Recreation fixed
-- [ ] **MongoDB Atlas account created** ← YOU ARE HERE
-- [ ] **MONGODB_URI added to Netlify**
+- [ ] **Supabase account created** ← YOU ARE HERE
+- [ ] **Supabase keys added to Netlify**
 - [ ] **Site redeployed**
 - [ ] **Features tested**
 
@@ -244,10 +258,11 @@ src/
 ## Important Notes
 
 ### Security
-- Passwords are hashed with bcrypt (not stored in plain text)
+- Passwords automatically hashed and secured by Supabase
 - CORS properly configured for security
 - Environment variables protect sensitive data
-- MongoDB credentials not exposed in code
+- PostgreSQL reliability with built-in security features
+- RLS (Row Level Security) available for advanced access control
 
 ### Performance
 - Serverless functions scale automatically
@@ -259,7 +274,7 @@ src/
 - **Eleventy**: Free
 - **Netlify**: Free tier (sufficient for this site)
 - **GitHub**: Free
-- **MongoDB**: Free tier (512MB - enough for thousands of users)
+- **Supabase**: Free tier (unlimited users, 500MB storage)
 - **Total**: $0/month
 
 ### Maintenance
@@ -300,6 +315,6 @@ Netlify automatically deploys when you push to main!
 
 ---
 
-**Status**: Ready to deploy! Just set up MongoDB and add the environment variable.
+**Status**: Ready to deploy! Just set up Supabase and add the environment variables.
 
 **Last Updated**: February 18, 2026
